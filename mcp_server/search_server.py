@@ -11,7 +11,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 from services.search_engine_service.serper_dev_service import SerperDevService
-
+from starlette.responses import Response
 mcp = FastMCP("Search Engine Server")
 
 search_service = SerperDevService()
@@ -46,19 +46,16 @@ def create_starlette_app(
         debug: bool = False,
 ) -> Starlette:
     """
-    Create a Starlette application that can server the provied mcp server with SSE.
-    :param mcp_server: the mcp server to serve
-    :param debug: whether to enable debug mode
-    :return: a Starlette application
+    Create a Starlette application that can serve the provided MCP server with SSE.
     """
 
     sse = SseServerTransport("/messages/")
 
-    async def handle_sse(request: Request) -> None:
+    async def handle_sse(request: Request) -> Response:
         async with sse.connect_sse(
-                request.scope,
-                request.receive,
-                request._send,  # noqa: SLF001
+            request.scope,
+            request.receive,
+            request._send,  # noqa: SLF001
         ) as (read_stream, write_stream):
             await mcp_server.run(
                 read_stream,
@@ -66,10 +63,13 @@ def create_starlette_app(
                 mcp_server.create_initialization_options(),
             )
 
+        print("DEBUG: returning Response from handle_sse", file=sys.stderr, flush=True)
+        return Response(status_code=204)
+
     return Starlette(
         debug=debug,
         routes=[
-            Route("/sse", endpoint=handle_sse),
+            Route("/sse", endpoint=handle_sse, methods=["GET"]),
             Mount("/messages/", app=sse.handle_post_message),
         ],
     )
