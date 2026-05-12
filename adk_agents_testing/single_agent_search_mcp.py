@@ -16,36 +16,40 @@ from requests import session
 load_dotenv(find_dotenv())
 
 async def get_agent_async():
-  """Creates an ADK Agent equipped with tools from the MCP Server."""
-  toolset = await get_tools_async()
+    """Creates an ADK Agent equipped with tools from the MCP Server."""
+    toolset = await get_tools_async()
 
-  root_agent = LlmAgent(
-      model='gemini-2.5-flash',
-      name='search_agent',
-      description="Agent to answer questions using Google Search.",
-      instruction=(
-          "You are an expert researcher. When someone asks you something "
-          "you always double check online. You always stick to the facts."
-      ),
-      tools=[toolset],
-  )
+    root_agent = LlmAgent(
+        model='gemini-2.5-flash',
+        name='search_agent',
+        description="Agent to answer questions using Google Search.",
+        instruction=(
+            "You are an expert researcher. When someone asks you something "
+            "you always double check online. You always stick to the facts."
+        ),
+        tools=[toolset],
+    )
 
-  return root_agent, toolset
+    return root_agent, toolset
 
 async def get_tools_async():
-  """Gets tools from the Search MCP Server."""
-  print("Attempting to connect to MCP Search server...")
+    """Gets tools from the Search MCP Server."""
+    print("Attempting to connect to MCP Search server...")
+    
+    env = os.environ.copy()
+    env["PYTHONPATH"] = (
+    r"C:\Users\mfvq0520\my-a2a-mcp\a2a-mcp"
+    + os.pathsep
+    + env.get("PYTHONPATH", "")
+)
 
-  env = os.environ.copy()
-  env["PYTHONPATH"] = r"D:\Programs\a2a-mcp" + os.pathsep + env.get("PYTHONPATH", "")
-
-  toolset = McpToolset(
+    toolset = McpToolset(
       connection_params=StdioConnectionParams(
           server_params=StdioServerParameters(
-              command=r"C:\Users\85195\.local\bin\uv.exe",
+              command="uv",
               args=[
                   "--directory",
-                  r"D:\Programs\a2a-mcp\mcp_server",
+                  r"C:\Users\mfvq0520\my-a2a-mcp\a2a-mcp\mcp_server",
                   "run",
                   "search_server.py",
               ],
@@ -54,8 +58,8 @@ async def get_tools_async():
       ),
   )
 
-  print("MCP Toolset created successfully.")
-  return toolset
+    print("MCP Toolset created successfully.")
+    return toolset
 
 async def async_main():
     session_service = InMemorySessionService()
