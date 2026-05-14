@@ -1,34 +1,28 @@
-from google.adk.tools.mcp_tool import MCPToolset
-from google.adk.tools.mcp_tool.mcp_toolset import SseServerParams
-from mcp import StdioServerParameters
+from google.adk.tools.mcp_tool import McpToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams
 
 
-async def return_mcp_tools_search():
-    print("Attempting to connect to MCP server for search and page read...")
-    tools, exit_stack = await MCPToolset.from_server(
-        connection_params=StdioServerParameters(
-            command="/opt/homebrew/bin/uv",
-            args=[
-                "--directory",
-                "/Users/tsadoq/gits/a2a-mcp-tutorial/mcp_server",
-                "run",
-                "search_server.py"
-            ],
-            env={
-                "MCP_PORT":"8000",
-                "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
-            },
-        )
-    )
-    print("MCP Toolset created successfully.")
-    return tools, exit_stack
+SEARCH_MCP_URL = "http://127.0.0.1:8080/sse"
 
 
 async def return_sse_mcp_tools_search():
     print("Attempting to connect to MCP server for search and page read...")
-    server_params = SseServerParams(
-        url="http://localhost:8080/sse",
+
+    toolset = McpToolset(
+        connection_params=SseConnectionParams(
+            url=SEARCH_MCP_URL,
+        ),
     )
-    tools, exit_stack = await MCPToolset.from_server(connection_params=server_params)
+
     print("MCP Toolset created successfully.")
-    return tools, exit_stack
+    return [toolset], toolset
+
+
+async def return_mcp_tools_search():
+    """
+    Compatibility function for older code.
+
+    This project now uses the SSE search MCP server instead of launching
+    the search MCP server through stdio.
+    """
+    return await return_sse_mcp_tools_search()
