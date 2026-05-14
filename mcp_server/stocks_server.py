@@ -13,7 +13,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from services.stocks_service.finhub_service import FinHubService
 
 mcp = FastMCP("Stock Information Server")
-
+from starlette.responses import Response
 search_service = FinHubService()
 
 @mcp.tool()
@@ -49,7 +49,7 @@ def create_starlette_app(
 
     sse = SseServerTransport("/messages/")
 
-    async def handle_sse(request: Request) -> None:
+    async def handle_sse(request: Request) -> Response:
         async with sse.connect_sse(
                 request.scope,
                 request.receive,
@@ -60,11 +60,12 @@ def create_starlette_app(
                 write_stream,
                 mcp_server.create_initialization_options(),
             )
+        return Response(status_code=204)
 
     return Starlette(
         debug=debug,
         routes=[
-            Route("/sse", endpoint=handle_sse),
+            Route("/sse", endpoint=handle_sse, methods=["GET"]),
             Mount("/messages/", app=sse.handle_post_message),
         ],
     )
